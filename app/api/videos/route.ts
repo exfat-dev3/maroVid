@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type VideoRecord = { id: string; title: string; creator: string; category: string; views: string; duration: string; thumb: string; src: string; created: number };
+type VideoRecord = { id: string; title: string; creator: string; views: string; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
 
 export async function GET() {
@@ -25,7 +25,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const record = await request.json() as VideoRecord;
-    if (!record.id || !record.title || !record.src || !record.category) return NextResponse.json({ error: '入力内容を確認してください。' }, { status: 400 });
+    if (!record.id || !record.title || !record.src) return NextResponse.json({ error: '入力内容を確認してください。' }, { status: 400 });
     const source = new URL(record.src);
     if (!source.hostname.endsWith('.public.blob.vercel-storage.com') || !source.pathname.startsWith('/marovid/')) return NextResponse.json({ error: 'Vercel Blob にアップロードした動画を指定してください。' }, { status: 400 });
     await put(`${prefix}${record.id}.json`, JSON.stringify(record), { access: 'public', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true });
