@@ -5,7 +5,7 @@ import { getSession } from '../../../lib/auth';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type VideoRecord = { id: string; title: string; creator: string; views: string; likes?: number; duration: string; thumb: string; src: string; created: number };
+type VideoRecord = { id: string; title: string; creator: string; views: string; likes?: number; ownerId?: string; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
 
 export async function GET() {
@@ -24,6 +24,7 @@ export async function GET() {
       }
       if (record.src.includes('.private.blob.vercel-storage.com')) record.src = `/api/videos/${record.id}/stream`;
       if (record.thumb.includes('.private.blob.vercel-storage.com')) record.thumb = `/api/videos/${record.id}/thumbnail`;
+      delete record.ownerId;
       return record;
     }));
     return NextResponse.json(records.filter(Boolean).sort((a, b) => b!.created - a!.created));
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
     }
 
     record.creator = user.username;
+    record.ownerId = user.id;
     record.views = '0';
     record.likes = 0;
     const pathname = `${prefix}${record.id}.json`;
