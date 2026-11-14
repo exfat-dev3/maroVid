@@ -1,7 +1,7 @@
 import { get, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
-type VideoRecord = { id: string; title: string; creator: string; views?: number | string; likes?: number | string; duration: string; thumb: string; src: string; created: number };
+type VideoRecord = { id: string; title: string; creator: string; creatorAvatar?: string | null; views?: number | string; likes?: number | string; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
 
 export const runtime = 'nodejs';
