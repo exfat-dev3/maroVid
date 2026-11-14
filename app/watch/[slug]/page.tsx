@@ -8,7 +8,8 @@ const fmt = (seconds: number) => `${Math.floor(seconds / 60)}:${Math.floor(secon
 
 export default function WatchPage() {
   const route = useParams<{ slug: string }>();
-  const id = (route.slug || '').startsWith('id=') ? route.slug.slice(3) : route.slug;
+  const slug = (() => { try { return decodeURIComponent(route.slug || ''); } catch { return route.slug || ''; } })();
+  const id = slug.startsWith('id=') ? slug.slice(3) : slug;
   const [video, setVideo] = useState<Video | null>(null);
   const [liked, setLiked] = useState(false);
   const [busy, setBusy] = useState(false);
