@@ -1,4 +1,4 @@
-import { del, list, put } from '@vercel/blob';
+import { del, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -19,21 +19,6 @@ export async function GET() {
   } catch (error) {
     console.error('Unable to list videos', error);
     return NextResponse.json({ error: '動画一覧を取得できません。Vercel Blob を接続してください。' }, { status: 503 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const record = await request.json() as VideoRecord;
-    if (!record.id || !record.title || !record.src) return NextResponse.json({ error: '入力内容を確認してください。' }, { status: 400 });
-    let source: URL;
-    try { source = new URL(record.src); } catch { return NextResponse.json({ error: '動画 URL が正しくありません。' }, { status: 400 }); }
-    if (source.protocol !== 'https:') return NextResponse.json({ error: 'HTTPS の動画 URL を指定してください。' }, { status: 400 });
-    await put(`${prefix}${record.id}.json`, JSON.stringify(record), { access: 'public', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true });
-    return NextResponse.json(record, { status: 201 });
-  } catch (error) {
-    console.error('Unable to save video metadata', error);
-    return NextResponse.json({ error: '投稿を保存できませんでした。' }, { status: 503 });
   }
 }
 
