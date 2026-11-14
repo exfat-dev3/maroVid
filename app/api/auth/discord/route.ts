@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   authorize.searchParams.set('client_id', clientId);
   authorize.searchParams.set('response_type', 'code');
   authorize.searchParams.set('redirect_uri', redirectUri);
-  authorize.searchParams.set('scope', 'identify');
+  authorize.searchParams.set('scope', 'identify email');
   authorize.searchParams.set('state', state);
   authorize.searchParams.set('code_challenge', createOAuthPkceChallenge(verifier));
   authorize.searchParams.set('code_challenge_method', 'S256');
