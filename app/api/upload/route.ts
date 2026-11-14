@@ -1,5 +1,5 @@
 import { issueSignedToken } from '@vercel/blob';
-import { getSession } from '@/lib/auth';
+import { getSession } from '../../../lib/auth';
 import { handleUploadPresigned, type HandleUploadPresignedBody } from '@vercel/blob/client';
 
 export const runtime = 'nodejs';
