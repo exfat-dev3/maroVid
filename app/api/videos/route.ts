@@ -26,8 +26,10 @@ export async function POST(request: Request) {
   try {
     const record = await request.json() as VideoRecord;
     if (!record.id || !record.title || !record.src) return NextResponse.json({ error: '入力内容を確認してください。' }, { status: 400 });
-    const source = new URL(record.src);
-    if (!source.hostname.endsWith('.public.blob.vercel-storage.com') || !source.pathname.startsWith('/marovid/')) return NextResponse.json({ error: 'Vercel Blob にアップロードした動画を指定してください。' }, { status: 400 });
+    let source: URL;
+    try { source = new URL(record.src); } catch { return NextResponse.json({ error: '動画 URL が正しくありません。' }, { status: 400 }); }
+    const sourcePath = decodeURIComponent(source.pathname);
+    if (!source.hostname.endsWith('.public.blob.vercel-storage.com') || !sourcePath.startsWith('/marovid/')) return NextResponse.json({ error: 'Vercel Blob にアップロードした動画を指定してください。' }, { status: 400 });
     await put(`${prefix}${record.id}.json`, JSON.stringify(record), { access: 'public', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true });
     return NextResponse.json(record, { status: 201 });
   } catch (error) {
@@ -50,7 +52,8 @@ export async function DELETE(request: Request) {
       const record = await fetch(metadata.url, { cache: 'no-store' }).then(r => r.json()) as VideoRecord;
       const videoUrl = record.src;
       const parsedVideoUrl = new URL(videoUrl);
-      const ownedVideo = parsedVideoUrl.hostname.endsWith('.public.blob.vercel-storage.com') && parsedVideoUrl.pathname.startsWith('/marovid/');
+      const videoPath = decodeURIComponent(parsedVideoUrl.pathname);
+      const ownedVideo = parsedVideoUrl.hostname.endsWith('.public.blob.vercel-storage.com') && videoPath.startsWith('/marovid/');
       await del([metadata.url, ...(ownedVideo ? [videoUrl] : [])]);
     }
     return NextResponse.json({ ok: true });
