@@ -5,7 +5,7 @@ import { getSession } from '../../../lib/auth';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type VideoRecord = { id: string; title: string; creator: string; views: string; likes?: number; ownerId?: string; duration: string; thumb: string; src: string; created: number };
+type VideoRecord = { id: string; title: string; creator: string; views: string; likes?: number; creatorAvatar?: string | null; ownerId?: string; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
 
 export async function GET() {
@@ -48,6 +48,7 @@ export async function POST(request: Request) {
     }
 
     record.creator = user.username;
+    record.creatorAvatar = user.avatar;
     record.ownerId = user.id;
     record.views = '0';
     record.likes = 0;
