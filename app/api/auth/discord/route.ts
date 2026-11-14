@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createOAuthState, createPkceVerifier, oauthStateCookie, pkceCookie, createOAuthPkceChallenge } from '../../../../lib/auth';
+import { createOAuthState, createPkceVerifier, oauthStateCookie, pkceCookie, createOAuthPkceChallenge, returnToCookie } from '../../../../lib/auth';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request) {
@@ -21,5 +21,7 @@ export async function GET(request: Request) {
   const response = NextResponse.redirect(authorize);
   response.headers.append('Set-Cookie', oauthStateCookie(state, request));
   response.headers.append('Set-Cookie', pkceCookie(verifier, request));
+  const next = new URL(request.url).searchParams.get('next');
+  response.headers.append('Set-Cookie', returnToCookie(next === '/studio' ? '/studio' : '/', request));
   return response;
 }
