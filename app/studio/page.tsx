@@ -67,7 +67,7 @@ export default function StudioPage() {
     setError(''); setNotice(''); setUploading(true);
     try {
       const thumbnailFrame = await captureThumbnail(file);
-      const source = await uploadPresigned(`marovid/${crypto.randomUUID()}-${file.name.replace(/[^\\w.\\-ぁ-んァ-ン一-龯]/g, '_')}`, file, { access: 'public', handleUploadUrl: '/api/upload', multipart: true });
+      const source = await uploadPresigned(`marovid/${crypto.randomUUID()}-${file.name.replace(/[^A-Za-z0-9_.ぁ-んァ-ン一-龯-]/g, '_')}`, file, { access: 'public', handleUploadUrl: '/api/upload', multipart: true });
       const id = createVideoId();
       const thumbnail = await uploadPresigned(`marovid/thumbnails/${id}.jpg`, thumbnailFrame, { access: 'public', contentType: 'image/jpeg', handleUploadUrl: '/api/upload' });
       const record: Video = { id, title: String(data.get('title') || '').trim(), creator: user.username, views: 0, likes: 0, duration: '--:--', thumb: thumbnail.url, src: source.url, created: Date.now() };
