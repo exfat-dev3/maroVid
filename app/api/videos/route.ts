@@ -22,6 +22,7 @@ export async function GET() {
         record = await response.json() as VideoRecord;
       }
       if (record.src.includes('.private.blob.vercel-storage.com')) record.src = `/api/videos/${record.id}/stream`;
+      if (record.thumb.includes('.private.blob.vercel-storage.com')) record.thumb = `/api/videos/${record.id}/thumbnail`;
       return record;
     }));
     return NextResponse.json(records.filter(Boolean).sort((a, b) => b!.created - a!.created));
@@ -100,8 +101,12 @@ export async function DELETE(request: Request) {
       const videoUrl = record.src;
       const parsedVideoUrl = new URL(videoUrl);
       const videoPath = decodeURIComponent(parsedVideoUrl.pathname);
-      const ownedVideo = (parsedVideoUrl.hostname.endsWith('.public.blob.vercel-storage.com') || parsedVideoUrl.hostname.endsWith('.private.blob.vercel-storage.com')) && videoPath.startsWith('/marovid/');
-      await del([metadata.url, ...(ownedVideo ? [videoUrl] : [])]);
+      const ownedVideo = (parsedVideoUrl.hostname.endsWith('.public.blob.vercel-storage.com') || parsedVideoUrl.hostname.endsWith('.private.blob.vercel-storage.com')) && videoPath.startsWith('/marovid/') && !videoPath.startsWith('/marovid/videos/');
+      const thumbnailUrl = record.thumb;
+      const parsedThumbnailUrl = new URL(thumbnailUrl);
+      const thumbnailPath = decodeURIComponent(parsedThumbnailUrl.pathname);
+      const ownedThumbnail = (parsedThumbnailUrl.hostname.endsWith('.public.blob.vercel-storage.com') || parsedThumbnailUrl.hostname.endsWith('.private.blob.vercel-storage.com')) && thumbnailPath.startsWith('/marovid/thumbnails/');
+      await del([metadata.url, ...(ownedVideo ? [videoUrl] : []), ...(ownedThumbnail ? [thumbnailUrl] : [])]);
     }
     return NextResponse.json({ ok: true });
   } catch (error) {
