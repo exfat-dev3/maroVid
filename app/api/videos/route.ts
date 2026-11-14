@@ -1,6 +1,6 @@
 import { del, get, issueSignedToken, list, presignUrl } from '@vercel/blob';
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession } from '../../../lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
