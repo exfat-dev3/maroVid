@@ -1,7 +1,7 @@
 import { get, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
-type VideoRecord = { id: string; title: string; creator: string; creatorAvatar?: string | null; views?: number | string; likes?: number | string; duration: string; thumb: string; src: string; created: number };
+type VideoRecord = { id: string; title: string; creator: string; creatorAvatar?: string | null; ownerId?: string; ownerEmailEncrypted?: string | null; views?: number | string; likes?: number | string; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
 
 export const runtime = 'nodejs';
@@ -25,7 +25,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       if (!response.ok) return NextResponse.json({ error: '動画が見つかりません。' }, { status: 404 });
       record = await response.json() as VideoRecord;
     }
-    return NextResponse.json({ ...record, views: Number(record.views) || 0, likes: Number(record.likes) || 0,
+    const { ownerId: _ownerId, ownerEmailEncrypted: _ownerEmailEncrypted, ...publicRecord } = record;
+    return NextResponse.json({ ...publicRecord, views: Number(record.views) || 0, likes: Number(record.likes) || 0,
       src: record.src.includes('.private.blob.vercel-storage.com') ? `/api/videos/${id}/stream` : record.src,
       thumb: record.thumb.includes('.private.blob.vercel-storage.com') ? `/api/videos/${id}/thumbnail` : record.thumb,
     });
