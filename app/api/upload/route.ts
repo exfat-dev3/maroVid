@@ -6,6 +6,7 @@ export const runtime = 'nodejs';
 const videoContentTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
 const videoMaximumSizeInBytes = 250 * 1024 * 1024;
 const metadataContentTypes = ['application/json'];
+const thumbnailContentTypes = ['image/jpeg'];
 const metadataMaximumSizeInBytes = 1024 * 1024;
 
 export async function POST(request: Request): Promise<Response> {
@@ -16,12 +17,13 @@ export async function POST(request: Request): Promise<Response> {
       request,
       getSignedToken: async pathname => {
         const isMetadata = /^marovid\/videos\/[\w-]+\.json$/i.test(pathname);
-        const isVideo = pathname.startsWith('marovid/') && !pathname.startsWith('marovid/videos/');
-        if (!isMetadata && !isVideo) throw new Error('Invalid upload path');
-        const allowedContentTypes = isMetadata ? metadataContentTypes : videoContentTypes;
-        const maximumSizeInBytes = isMetadata ? metadataMaximumSizeInBytes : videoMaximumSizeInBytes;
+        const isThumbnail = /^marovid\/thumbnails\/[\w-]+\.jpg$/i.test(pathname);
+        const isVideo = pathname.startsWith('marovid/') && !pathname.startsWith('marovid/videos/') && !pathname.startsWith('marovid/thumbnails/');
+        if (!isMetadata && !isThumbnail && !isVideo) throw new Error('Invalid upload path');
+        const allowedContentTypes = isMetadata ? metadataContentTypes : isThumbnail ? thumbnailContentTypes : videoContentTypes;
+        const maximumSizeInBytes = isVideo ? videoMaximumSizeInBytes : metadataMaximumSizeInBytes;
         const token = await issueSignedToken({ pathname, operations: ['put'], allowedContentTypes, maximumSizeInBytes });
-        return { token, urlOptions: { allowedContentTypes, maximumSizeInBytes, addRandomSuffix: !isMetadata } };
+        return { token, urlOptions: { allowedContentTypes, maximumSizeInBytes, addRandomSuffix: isVideo } };
       },
     });
     return Response.json(jsonResponse);
