@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       cache: 'no-store',
     });
     if (!userResponse.ok) return failure();
-    const discordUser = await userResponse.json() as { id?: string; username?: string; global_name?: string | null; avatar?: string | null };
+    const discordUser = await userResponse.json() as { id?: string; username?: string; global_name?: string | null; avatar?: string | null; email?: string | null; verified?: boolean };
     if (!discordUser.id || !discordUser.username) return failure();
     const returnTo = getCookie(request, 'marovid_return_to') === '/studio' ? '/studio' : '/';
     const response = NextResponse.redirect(new URL(returnTo, request.url));
@@ -57,6 +57,7 @@ export async function GET(request: Request) {
     response.headers.append('Set-Cookie', makeSessionCookie({
       id: discordUser.id,
       username: discordUser.global_name || discordUser.username,
+      email: discordUser.verified ? (discordUser.email || null) : null,
       avatar: discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.${avatarExtension}` : `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png`,
     }, request));
     response.headers.append('Set-Cookie', clearCookie('marovid_oauth_state', request));
