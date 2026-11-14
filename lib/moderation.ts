@@ -58,3 +58,62 @@ export async function saveUserRestriction(userId: string, restriction: UserRestr
   });
   if (!response.ok) throw new Error('Unable to save moderation data');
 }
+
+export type RegisteredAccount = { id: string; username: string; avatar: string | null; email: string | null; updatedAt: number };
+type StoredAccount = { username: string; avatar: string | null; emailEncrypted: string | null; updatedAt: number };
+const accountsPath = 'marovid/admin/accounts.json';
+
+async function readAccounts(): Promise<{ accounts: Record<string, StoredAccount>; metadataUrl: string | null }> {
+  const { blobs } = await list({ prefix: accountsPath });
+  const metadata = blobs.find(blob => blob.pathname === accountsPath);
+  if (!metadata) return { accounts: {}, metadataUrl: null };
+  let stored: { encrypted?: string };
+  if (metadata.url.includes('.private.blob.vercel-storage.com')) {
+    const result = await get(accountsPath, { access: 'private' });
+    if (!result?.stream) return { accounts: {}, metadataUrl: metadata.url };
+    stored = await new Response(result.stream).json() as { encrypted?: string };
+  } else {
+    const response = await fetch(metadata.url, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Unable to read registered accounts');
+    stored = await response.json() as { encrypted?: string };
+  }
+  if (!stored.encrypted) return { accounts: {}, metadataUrl: metadata.url };
+  const decoded = decryptPrivateValue(stored.encrypted);
+  if (!decoded) throw new Error('Unable to decrypt registered accounts');
+  return { accounts: JSON.parse(decoded) as Record<string, StoredAccount>, metadataUrl: metadata.url };
+}
+
+async function writeEncryptedBlob(path: string, value: unknown, existingUrl: string | null) {
+  let access: 'public' | 'private' = existingUrl?.includes('.private.blob.vercel-storage.com') ? 'private' : 'public';
+  if (!existingUrl) {
+    const { blobs } = await list({ prefix: 'marovid/' });
+    if (blobs.some(blob => blob.url.includes('.private.blob.vercel-storage.com'))) access = 'private';
+  }
+  const allowedContentTypes = ['application/json'];
+  const maximumSizeInBytes = 1024 * 1024;
+  const token = await issueSignedToken({ pathname: path, operations: ['put'], allowedContentTypes, maximumSizeInBytes });
+  const { presignedUrl } = await presignUrl(token, { operation: 'put', pathname: path, access, allowedContentTypes, maximumSizeInBytes, addRandomSuffix: false, allowOverwrite: Boolean(existingUrl) });
+  const response = await fetch(presignedUrl, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ encrypted: encryptPrivateValue(JSON.stringify(value)) }) });
+  if (!response.ok) throw new Error('Unable to save encrypted account data');
+}
+
+export async function upsertRegisteredAccount(user: { id: string; username: string; avatar: string | null; email?: string | null }) {
+  const { accounts, metadataUrl } = await readAccounts();
+  const existing = accounts[user.id];
+  accounts[user.id] = {
+    username: user.username,
+    avatar: user.avatar,
+    emailEncrypted: user.email ? encryptPrivateValue(user.email) : existing?.emailEncrypted || null,
+    updatedAt: Date.now(),
+  };
+  await writeEncryptedBlob(accountsPath, accounts, metadataUrl);
+}
+
+export async function getRegisteredAccounts(): Promise<RegisteredAccount[]> {
+  const { accounts } = await readAccounts();
+  return Object.entries(accounts).map(([id, account]) => ({
+    id, username: account.username, avatar: account.avatar,
+    email: account.emailEncrypted ? decryptPrivateValue(account.emailEncrypted) : null,
+    updatedAt: account.updatedAt,
+  }));
+}
