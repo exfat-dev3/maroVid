@@ -49,7 +49,10 @@ export async function GET(request: Request) {
     if (!discordUser.id || !discordUser.username) return failure();
     const returnTo = getCookie(request, 'marovid_return_to') === '/studio' ? '/studio' : '/';
     const response = NextResponse.redirect(new URL(returnTo, request.url));
-    const defaultAvatarIndex = Number((BigInt(discordUser.id) >> 22n) % 6n);
+    const divisor = 4194304;
+    let avatarRemainder = 0;
+    for (const digit of discordUser.id) avatarRemainder = (avatarRemainder * 10 + Number(digit)) % (6 * divisor);
+    const defaultAvatarIndex = Math.floor(avatarRemainder / divisor);
     const avatarExtension = discordUser.avatar?.startsWith('a_') ? 'gif' : 'png';
     response.headers.append('Set-Cookie', makeSessionCookie({
       id: discordUser.id,
