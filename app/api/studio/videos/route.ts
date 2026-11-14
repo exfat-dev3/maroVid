@@ -2,7 +2,7 @@ import { get, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 
-type VideoRecord = { id: string; ownerId?: string; title: string; creator: string; views?: number | string; likes?: number; duration: string; thumb: string; src: string; created: number };
+type VideoRecord = { id: string; ownerId?: string; title: string; creator: string; views?: number | string; likes?: number; creatorAvatar?: string | null; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       if (record.ownerId !== user.id) return null;
       return {
         id: record.id, title: record.title, creator: record.creator, views: Number(record.views) || 0,
-        likes: Number(record.likes) || 0, duration: record.duration,
+        likes: Number(record.likes) || 0, creatorAvatar: record.creatorAvatar || null, duration: record.duration,
         thumb: record.thumb.includes('.private.blob.vercel-storage.com') ? `/api/videos/${record.id}/thumbnail` : record.thumb,
         src: record.src.includes('.private.blob.vercel-storage.com') ? `/api/videos/${record.id}/stream` : record.src,
         created: record.created,
