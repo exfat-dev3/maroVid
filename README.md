@@ -9,7 +9,7 @@ Vercel 上で動く動画投稿サービスです。Next.js App Router と Verce
 3. Project Settings → Environment Variables で `ADMIN_PASSWORD` を設定します。
 4. 再デプロイします。
 
-`/` から MP4 / WebM / MOV の動画ファイル（最大 250 MB）を投稿できます。動画と投稿情報は Vercel Blob に保存されます。`/admin` は `ADMIN_PASSWORD` でログインし、投稿の検索と削除を行えます。
+`/` から MP4 / WebM / MOV の動画ファイル（最大 250 MB）を投稿できます。サムネイルは動画のランダムな位置から自動生成し、動画・サムネイル・投稿情報を Vercel Blob に保存します。`/admin` は `ADMIN_PASSWORD` でログインし、投稿の検索と削除を行えます。
 
 ## ローカル開発
 
