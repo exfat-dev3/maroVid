@@ -5,7 +5,7 @@ Vercel 上で動く動画投稿サービスです。Next.js App Router と Verce
 ## Vercel への設定
 
 1. GitHub の `exfat-dev3/maroVid` を Vercel にインポートします。
-2. Vercel のプロジェクト Storage から **Public** Blob ストアを作成し、このプロジェクトに接続します。Vercel が OIDC を設定します。
+2. Vercel のプロジェクト Storage から Blob ストアを作成して接続します。Public ストアを推奨します。Private ストアでも再生できますが、動画配信は Vercel Function を経由します。Vercel が OIDC を設定します。
 3. Project Settings → Environment Variables で `ADMIN_PASSWORD` を設定します。
 4. 再デプロイします。
 
