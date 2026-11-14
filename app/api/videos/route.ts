@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type VideoRecord = { id: string; title: string; creator: string; views: string; duration: string; thumb: string; src: string; created: number };
+type VideoRecord = { id: string; title: string; creator: string; views: string; likes?: number; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
 
 export async function GET() {
