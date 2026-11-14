@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: '管理者パスワードが正しくありません。' }, { status: 401 });
   try {
     const { blobs } = await list({ prefix: 'marovid/videos/' });
-    const users = new Map<string, { id: string; username: string; avatar: string | null; email: string | null; videoCount: number }>();
+    const users = new Map<string, { id: string; username: string; avatar: string | null; email: string | null; videoCount: number; videoIds: string[] }>();
     await Promise.all(blobs.filter(blob => blob.pathname.endsWith('.json')).map(async blob => {
       let record: VideoRecord;
       if (blob.url.includes('.private.blob.vercel-storage.com')) {
@@ -28,11 +28,12 @@ export async function GET(request: Request) {
         record = await response.json() as VideoRecord;
       }
       if (!record.ownerId) return;
-      const current = users.get(record.ownerId) || { id: record.ownerId, username: record.creator, avatar: record.creatorAvatar || null, email: null, videoCount: 0 };
+      const current = users.get(record.ownerId) || { id: record.ownerId, username: record.creator, avatar: record.creatorAvatar || null, email: null, videoCount: 0, videoIds: [] };
       current.username = record.creator || current.username;
       current.avatar = record.creatorAvatar || current.avatar;
       if (record.ownerEmailEncrypted) current.email = decryptPrivateValue(record.ownerEmailEncrypted) || current.email;
       current.videoCount += 1;
+      current.videoIds.push(record.id);
       users.set(record.ownerId, current);
     }));
     const restrictions = await getAllRestrictions();
