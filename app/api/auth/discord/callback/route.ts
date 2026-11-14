@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     const response = NextResponse.redirect(new URL('/?auth=failed', request.url));
     response.headers.append('Set-Cookie', clearCookie('marovid_oauth_state', request));
     response.headers.append('Set-Cookie', clearCookie('marovid_pkce', request));
+    response.headers.append('Set-Cookie', clearCookie('marovid_return_to', request));
     return response;
   };
   if (!code || !state || !savedState || state !== savedState || !verifier) return failure();
@@ -46,7 +47,8 @@ export async function GET(request: Request) {
     if (!userResponse.ok) return failure();
     const discordUser = await userResponse.json() as { id?: string; username?: string; global_name?: string | null; avatar?: string | null };
     if (!discordUser.id || !discordUser.username) return failure();
-    const response = NextResponse.redirect(new URL('/', request.url));
+    const returnTo = getCookie(request, 'marovid_return_to') === '/studio' ? '/studio' : '/';
+    const response = NextResponse.redirect(new URL(returnTo, request.url));
     response.headers.append('Set-Cookie', makeSessionCookie({
       id: discordUser.id,
       username: discordUser.global_name || discordUser.username,
@@ -54,6 +56,7 @@ export async function GET(request: Request) {
     }, request));
     response.headers.append('Set-Cookie', clearCookie('marovid_oauth_state', request));
     response.headers.append('Set-Cookie', clearCookie('marovid_pkce', request));
+    response.headers.append('Set-Cookie', clearCookie('marovid_return_to', request));
     return response;
   } catch (error) {
     console.error('Discord OAuth callback failed', error);
