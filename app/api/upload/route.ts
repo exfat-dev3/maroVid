@@ -17,7 +17,8 @@ export async function POST(request: Request): Promise<Response> {
       request,
       getSignedToken: async pathname => {
         const isThumbnail = /^marovid\/thumbnails\/[\w-]+\.jpg$/i.test(pathname);
-        const isVideo = /^marovid\/[\\w.\\-ぁ-んァ-ン一-龯]+$/.test(pathname);
+        const videoName = pathname.startsWith('marovid/') ? pathname.slice(8) : '';
+        const isVideo = /^[A-Za-z0-9_.ぁ-んァ-ン一-龯-]+$/.test(videoName);
         if (!isThumbnail && !isVideo) throw new Error('Invalid upload path');
         const allowedContentTypes = isThumbnail ? thumbnailContentTypes : videoContentTypes;
         const maximumSizeInBytes = isVideo ? videoMaximumSizeInBytes : 1024 * 1024;
