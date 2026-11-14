@@ -38,6 +38,9 @@ export function clearCookie(name: string, request: Request) {
 export function oauthStateCookie(state: string, request: Request) {
   return secureCookie('marovid_oauth_state', state, request, 600);
 }
+export function returnToCookie(path: string, request: Request) {
+  return secureCookie('marovid_return_to', path, request, 600);
+}
 export function pkceCookie(verifier: string, request: Request) {
   return secureCookie('marovid_pkce', verifier, request, 600);
 }
