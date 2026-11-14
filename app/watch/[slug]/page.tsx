@@ -2,9 +2,10 @@
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { DiscordAvatar } from '../../components/discord-avatar';
 
 type AuthUser = { id: string; username: string; avatar: string | null };
-type Video = { id: string; title: string; creator: string; views: number; likes: number; duration: string; thumb: string; src: string; created: number };
+type Video = { id: string; title: string; creator: string; views: number; likes: number; creatorAvatar?: string | null; duration: string; thumb: string; src: string; created: number };
 const fmt = (seconds: number) => `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
 
 export default function WatchPage() {
@@ -102,7 +103,7 @@ export default function WatchPage() {
   }
 
   return <main className="watch-page">
-    <header className="topbar watch-topbar"><a className="brand" href="/"><span className="brand-mark">m</span>maro<span>Vid</span></a>{authUser?<span className="auth-name">{authUser.username}</span>:<a className="auth-link" href="/api/auth/discord">Discordでログイン</a>}<a className="back-home" href="/">動画一覧へ</a></header>
+    <header className="topbar watch-topbar"><a className="brand" href="/"><span className="brand-mark">m</span>maro<span>Vid</span></a>{authUser?<span className="discord-profile"><DiscordAvatar userId={authUser.id} avatar={authUser.avatar} username={authUser.username} variant="account" /><span className="auth-name">{authUser.username}</span></span>:<a className="auth-link" href="/api/auth/discord">Discordでログイン</a>}<a className="back-home" href="/">動画一覧へ</a></header>
     <div className="watch-content">
       {error && !video ? <div className="watch-message">{error}<a href="/">動画一覧へ戻る</a></div> : !video ? <div className="watch-message">動画を読み込み中…</div> : <>
         <div className="watch-stage" ref={stageRef} onDoubleClick={toggleFullscreen}>
@@ -121,7 +122,7 @@ export default function WatchPage() {
         </div>
         <section className="watch-details">
           <h1>{video.title}</h1>
-          <div className="watch-meta"><div className="watch-creator"><span className="creator-avatar">{video.creator.slice(0,1)}</span><b>{video.creator}</b></div><div className="engagement"><span>▶　{Number(video.views).toLocaleString()} 回視聴</span><button className={liked ? 'good-button active' : 'good-button'} onClick={toggleGood} disabled={busy}>{authUser ? (liked ? '♥　Good' : '♡　Good') : 'DiscordログインしてGood'} <b>{Number(video.likes).toLocaleString()}</b></button></div></div>
+          <div className="watch-meta"><div className="watch-creator">{video.creatorAvatar ? <DiscordAvatar userId={video.ownerId || video.id} avatar={video.creatorAvatar} username={video.creator} variant="creator" /> : <span className="creator-avatar">{video.creator.slice(0,1)}</span>}<b>{video.creator}</b></div><div className="engagement"><span>▶　{Number(video.views).toLocaleString()} 回視聴</span><button className={liked ? 'good-button active' : 'good-button'} onClick={toggleGood} disabled={busy}>{authUser ? (liked ? '♥　Good' : '♡　Good') : 'DiscordログインしてGood'} <b>{Number(video.likes).toLocaleString()}</b></button></div></div>
           {error && <p className="watch-inline-error">{error}</p>}
         </section>
       </>}
