@@ -123,3 +123,12 @@ footer a:not(.brand){color:#444}
 .win-danger:hover{background:#fdf3f4}
 @media(max-width:920px){.video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.studio-columns{grid-template-columns:1fr}.studio-layout{grid-template-columns:180px minmax(0,1fr)}}
 @media(max-width:620px){.topbar{height:auto;min-height:54px;padding:8px 12px;gap:10px;flex-wrap:wrap}.search{order:3;flex:1 0 100%;max-width:none}.topbar nav{gap:0}.topbar nav>a:first-child{display:none}.topbar nav .auth-name,.topbar nav .auth-logout{display:none}.upload-btn{font-size:11px;padding:8px}.content{padding:25px 12px 40px}.video-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.video-card{padding:5px}.video-title{font-size:11px}.creator{font-size:9px}.studio-layout{display:block}.studio-sidebar{display:flex;gap:5px;border-right:0;border-bottom:1px solid #d6d6d6;padding:8px}.sidebar-title{display:none}.studio-sidebar a{padding:9px 10px}.studio-main{padding:21px 12px 40px}.studio-heading{align-items:start;gap:12px;flex-direction:column}.studio-columns{grid-template-columns:minmax(0,1fr)}.studio-panel{padding:15px}.studio-video{gap:8px}.studio-thumb{flex-basis:80px;height:52px}.win-danger{padding:6px 7px}.watch-content{margin-top:0}.watch-details{margin:0;border-left:0;border-right:0}.watch-meta{align-items:flex-start}.engagement{gap:8px}.back-home{margin-left:auto}.auth-link{font-size:10px}}
+
+/* Discord account and creator avatars */
+.discord-profile{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.discord-avatar{display:block;object-fit:cover;flex:0 0 auto;border-radius:50%;background:#e5f1fb}
+.discord-avatar-account{width:28px;height:28px}
+.discord-avatar-creator{width:28px;height:28px}
+.watch-creator .discord-avatar-creator{width:30px;height:30px}
+.studio-video .discord-avatar-creator{width:26px;height:26px}
+@media(max-width:620px){.discord-avatar-account{width:25px;height:25px}}
