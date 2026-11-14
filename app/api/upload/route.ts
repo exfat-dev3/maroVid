@@ -1,5 +1,6 @@
 import { issueSignedToken } from '@vercel/blob';
 import { getSession } from '../../../lib/auth';
+import { getUserRestriction } from '../../../lib/moderation';
 import { handleUploadPresigned, type HandleUploadPresignedBody } from '@vercel/blob/client';
 
 export const runtime = 'nodejs';
@@ -9,8 +10,12 @@ const videoMaximumSizeInBytes = 250 * 1024 * 1024;
 const thumbnailContentTypes = ['image/jpeg'];
 
 export async function POST(request: Request): Promise<Response> {
-  if (!getSession(request)) return Response.json({ error: '動画投稿にはDiscordログインが必要です。' }, { status: 401 });
   try {
+    const user = getSession(request);
+    if (!user) return Response.json({ error: '動画投稿にはDiscordログインが必要です。' }, { status: 401 });
+    const restriction = await getUserRestriction(user.id);
+    if (restriction?.banned) return Response.json({ error: 'このアカウントはBANされています。' }, { status: 403 });
+    if (restriction?.timeoutUntil && restriction.timeoutUntil > Date.now()) return Response.json({ error: 'このアカウントはタイムアウト中です。' }, { status: 403 });
     const body = await request.json() as HandleUploadPresignedBody;
     const jsonResponse = await handleUploadPresigned({
       body,
