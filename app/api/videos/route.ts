@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     if (!record.id || !record.title || !record.src) return NextResponse.json({ error: '入力内容を確認してください。' }, { status: 400 });
     let source: URL;
     try { source = new URL(record.src); } catch { return NextResponse.json({ error: '動画 URL が正しくありません。' }, { status: 400 }); }
-    if (!source.hostname.endsWith('.public.blob.vercel-storage.com')) return NextResponse.json({ error: '公開 Vercel Blob の動画 URL を指定してください。' }, { status: 400 });
+    if (source.protocol !== 'https:') return NextResponse.json({ error: 'HTTPS の動画 URL を指定してください。' }, { status: 400 });
     await put(`${prefix}${record.id}.json`, JSON.stringify(record), { access: 'public', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true });
     return NextResponse.json(record, { status: 201 });
   } catch (error) {
