@@ -1,15 +1,15 @@
 import { issueSignedToken } from '@vercel/blob';
+import { getSession } from '@/lib/auth';
 import { handleUploadPresigned, type HandleUploadPresignedBody } from '@vercel/blob/client';
 
 export const runtime = 'nodejs';
 
 const videoContentTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
 const videoMaximumSizeInBytes = 250 * 1024 * 1024;
-const metadataContentTypes = ['application/json'];
 const thumbnailContentTypes = ['image/jpeg'];
-const metadataMaximumSizeInBytes = 1024 * 1024;
 
 export async function POST(request: Request): Promise<Response> {
+  if (!getSession(request)) return Response.json({ error: '動画投稿にはDiscordログインが必要です。' }, { status: 401 });
   try {
     const body = await request.json() as HandleUploadPresignedBody;
     const jsonResponse = await handleUploadPresigned({
@@ -18,10 +18,10 @@ export async function POST(request: Request): Promise<Response> {
       getSignedToken: async pathname => {
         const isMetadata = /^marovid\/videos\/[\w-]+\.json$/i.test(pathname);
         const isThumbnail = /^marovid\/thumbnails\/[\w-]+\.jpg$/i.test(pathname);
-        const isVideo = pathname.startsWith('marovid/') && !pathname.startsWith('marovid/videos/') && !pathname.startsWith('marovid/thumbnails/');
-        if (!isMetadata && !isThumbnail && !isVideo) throw new Error('Invalid upload path');
-        const allowedContentTypes = isMetadata ? metadataContentTypes : isThumbnail ? thumbnailContentTypes : videoContentTypes;
-        const maximumSizeInBytes = isVideo ? videoMaximumSizeInBytes : metadataMaximumSizeInBytes;
+        const isVideo = /^marovid\\/[A-Za-z0-9._-]+$/.test(pathname);
+        if (!isThumbnail && !isVideo) throw new Error('Invalid upload path');
+        const allowedContentTypes = isThumbnail ? thumbnailContentTypes : videoContentTypes;
+        const maximumSizeInBytes = isVideo ? videoMaximumSizeInBytes : 1024 * 1024;
         const token = await issueSignedToken({ pathname, operations: ['put'], allowedContentTypes, maximumSizeInBytes });
         return { token, urlOptions: { allowedContentTypes, maximumSizeInBytes, addRandomSuffix: isVideo } };
       },
