@@ -1,6 +1,6 @@
 import { get, issueSignedToken, list, presignUrl } from '@vercel/blob';
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession } from '../../../../../lib/auth';
 
 type VideoRecord = { id: string; title: string; creator: string; views?: number | string; likes?: number | string; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
