@@ -3,8 +3,10 @@ import { handleUploadPresigned, type HandleUploadPresignedBody } from '@vercel/b
 
 export const runtime = 'nodejs';
 
-const allowedContentTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
-const maximumSizeInBytes = 250 * 1024 * 1024;
+const videoContentTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+const videoMaximumSizeInBytes = 250 * 1024 * 1024;
+const metadataContentTypes = ['application/json'];
+const metadataMaximumSizeInBytes = 1024 * 1024;
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -13,20 +15,13 @@ export async function POST(request: Request): Promise<Response> {
       body,
       request,
       getSignedToken: async pathname => {
-        const token = await issueSignedToken({
-          pathname,
-          operations: ['put'],
-          allowedContentTypes,
-          maximumSizeInBytes,
-        });
-        return {
-          token,
-          urlOptions: {
-            allowedContentTypes,
-            maximumSizeInBytes,
-            addRandomSuffix: true,
-          },
-        };
+        const isMetadata = /^marovid\/videos\/[\w-]+\.json$/i.test(pathname);
+        const isVideo = pathname.startsWith('marovid/') && !pathname.startsWith('marovid/videos/');
+        if (!isMetadata && !isVideo) throw new Error('Invalid upload path');
+        const allowedContentTypes = isMetadata ? metadataContentTypes : videoContentTypes;
+        const maximumSizeInBytes = isMetadata ? metadataMaximumSizeInBytes : videoMaximumSizeInBytes;
+        const token = await issueSignedToken({ pathname, operations: ['put'], allowedContentTypes, maximumSizeInBytes });
+        return { token, urlOptions: { allowedContentTypes, maximumSizeInBytes, addRandomSuffix: !isMetadata } };
       },
     });
     return Response.json(jsonResponse);
