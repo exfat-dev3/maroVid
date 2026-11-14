@@ -27,7 +27,7 @@ export default function WatchPage() {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
-    fetch('/api/auth/session').then(response => response.ok ? response.json() : { user: null }).then(data => { if (!cancelled) setAuthUser(data.user || null); }).catch(() => { if (!cancelled) setAuthUser(null); });
+    fetch('/api/auth/session').then(response => response.ok ? response.json() : { user: null }).then(data => { if (cancelled) return; const user = data.user || null; setAuthUser(user); if (user) { try { const likes = JSON.parse(localStorage.getItem(`marovid-likes:${user.id}`) || '[]') as string[]; setLiked(likes.includes(id)); } catch { setLiked(false); } } else setLiked(false); }).catch(() => { if (!cancelled) setAuthUser(null); });
     fetch(`/api/videos/${encodeURIComponent(id)}`)
       .then(async response => {
         if (!response.ok) throw new Error('動画が見つかりません。');
