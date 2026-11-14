@@ -1,11 +1,12 @@
 import { del, get, issueSignedToken, list, presignUrl } from '@vercel/blob';
 import { NextResponse } from 'next/server';
-import { getSession } from '../../../lib/auth';
+import { encryptPrivateValue, getSession } from '../../../lib/auth';
+import { getUserRestriction } from '../../../lib/moderation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type VideoRecord = { id: string; title: string; creator: string; views: string; likes?: number; creatorAvatar?: string | null; ownerId?: string; duration: string; thumb: string; src: string; created: number };
+type VideoRecord = { id: string; title: string; creator: string; views: string; likes?: number; creatorAvatar?: string | null; ownerId?: string; ownerEmailEncrypted?: string | null; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
 
 export async function GET() {
@@ -25,6 +26,7 @@ export async function GET() {
       if (record.src.includes('.private.blob.vercel-storage.com')) record.src = `/api/videos/${record.id}/stream`;
       if (record.thumb.includes('.private.blob.vercel-storage.com')) record.thumb = `/api/videos/${record.id}/thumbnail`;
       delete record.ownerId;
+      delete record.ownerEmailEncrypted;
       return record;
     }));
     return NextResponse.json(records.filter(Boolean).sort((a, b) => b!.created - a!.created));
@@ -49,6 +51,10 @@ export async function POST(request: Request) {
 
     record.creator = user.username;
     record.creatorAvatar = user.avatar;
+    const restriction = await getUserRestriction(user.id);
+    if (restriction?.banned) return NextResponse.json({ error: 'アカウントがBANされています。' }, { status: 403 });
+    if (restriction?.timeoutUntil && restriction.timeoutUntil > Date.now()) return NextResponse.json({ error: 'アカウントがタイムアウト中です。' }, { status: 403 });
+    record.ownerEmailEncrypted = user.email ? encryptPrivateValue(user.email) : null;
     record.ownerId = user.id;
     record.views = '0';
     record.likes = 0;
