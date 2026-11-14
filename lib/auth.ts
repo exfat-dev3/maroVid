@@ -27,9 +27,6 @@ export function createOAuthState() {
 export function createPkceVerifier() {
   return randomBytes(48).toString('base64url');
 }
-export function pkceChallenge(verifier: string) {
-  return createHash('sha256').update(verifier).digest('base64url');
-}
 export function secureCookie(name: string, value: string, request: Request, maxAge: number, extra = '') {
   const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
   return `${name}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}${extra}`;
