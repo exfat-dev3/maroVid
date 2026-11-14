@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { clearCookie, createOAuthPkceChallenge, getCookie, makeSessionCookie } from '@/lib/auth';
+import { clearCookie, createOAuthPkceChallenge, getCookie, makeSessionCookie } from '../../../../../lib/auth';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request) {
