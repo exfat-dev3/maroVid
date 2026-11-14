@@ -1,4 +1,4 @@
-import { del, list } from '@vercel/blob';
+import { del, issueSignedToken, list, presignUrl } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -19,6 +19,53 @@ export async function GET() {
   } catch (error) {
     console.error('Unable to list videos', error);
     return NextResponse.json({ error: '動画一覧を取得できません。Vercel Blob を接続してください。' }, { status: 503 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const record = await request.json() as VideoRecord;
+    if (!record.id || !/^[\w-]{1,128}$/.test(record.id) || !record.title || !record.src) {
+      return NextResponse.json({ error: '入力内容を確認してください。' }, { status: 400 });
+    }
+    const source = new URL(record.src);
+    if (source.protocol !== 'https:') {
+      return NextResponse.json({ error: 'HTTPS の動画 URL を指定してください。' }, { status: 400 });
+    }
+
+    const pathname = `${prefix}${record.id}.json`;
+    const allowedContentTypes = ['application/json'];
+    const maximumSizeInBytes = 1024 * 1024;
+    const token = await issueSignedToken({
+      pathname,
+      operations: ['put'],
+      allowedContentTypes,
+      maximumSizeInBytes,
+    });
+    const { presignedUrl } = await presignUrl(token, {
+      operation: 'put',
+      pathname,
+      access: 'public',
+      allowedContentTypes,
+      maximumSizeInBytes,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+    const saved = await fetch(presignedUrl, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(record),
+    });
+    if (!saved.ok) {
+      const detail = await saved.text();
+      console.error('Unable to upload video metadata', saved.status, detail);
+      return NextResponse.json({ error: '投稿情報を Vercel Blob に保存できませんでした。', detail }, { status: 503 });
+    }
+    return NextResponse.json(record, { status: 201 });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error('Unable to create video metadata upload', error);
+    return NextResponse.json({ error: '投稿情報を保存できませんでした。', detail }, { status: 503 });
   }
 }
 
