@@ -4,7 +4,8 @@ import { clearCookie, getSession } from '../../../../lib/auth';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
-  return NextResponse.json({ user: getSession(request) });
+  const user = getSession(request);
+  return NextResponse.json({ user: user ? { id: user.id, username: user.username, avatar: user.avatar } : null });
 }
 export async function DELETE(request: Request) {
   const response = new NextResponse(null, { status: 204 });
