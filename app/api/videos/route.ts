@@ -1,4 +1,4 @@
-import { del, issueSignedToken, list, presignUrl } from '@vercel/blob';
+import { del, get, issueSignedToken, list, presignUrl } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -11,9 +11,18 @@ export async function GET() {
   try {
     const { blobs } = await list({ prefix });
     const records = await Promise.all(blobs.filter(blob => blob.pathname.endsWith('.json')).map(async blob => {
-      const response = await fetch(blob.url, { cache: 'no-store' });
-      if (!response.ok) return null;
-      return response.json() as Promise<VideoRecord>;
+      let record: VideoRecord;
+      if (blob.url.includes('.private.blob.vercel-storage.com')) {
+        const result = await get(blob.pathname, { access: 'private' });
+        if (!result?.stream) return null;
+        record = await new Response(result.stream).json() as VideoRecord;
+      } else {
+        const response = await fetch(blob.url, { cache: 'no-store' });
+        if (!response.ok) return null;
+        record = await response.json() as VideoRecord;
+      }
+      if (record.src.includes('.private.blob.vercel-storage.com')) record.src = `/api/videos/${record.id}/stream`;
+      return record;
     }));
     return NextResponse.json(records.filter(Boolean).sort((a, b) => b!.created - a!.created));
   } catch (error) {
@@ -80,11 +89,18 @@ export async function DELETE(request: Request) {
     const { blobs } = await list({ prefix: pathname });
     const metadata = blobs.find(blob => blob.pathname === pathname);
     if (metadata) {
-      const record = await fetch(metadata.url, { cache: 'no-store' }).then(r => r.json()) as VideoRecord;
+      let record: VideoRecord;
+      if (metadata.url.includes('.private.blob.vercel-storage.com')) {
+        const result = await get(pathname, { access: 'private' });
+        if (!result?.stream) return NextResponse.json({ error: '動画が見つかりません。' }, { status: 404 });
+        record = await new Response(result.stream).json() as VideoRecord;
+      } else {
+        record = await fetch(metadata.url, { cache: 'no-store' }).then(r => r.json()) as VideoRecord;
+      }
       const videoUrl = record.src;
       const parsedVideoUrl = new URL(videoUrl);
       const videoPath = decodeURIComponent(parsedVideoUrl.pathname);
-      const ownedVideo = parsedVideoUrl.hostname.endsWith('.public.blob.vercel-storage.com') && videoPath.startsWith('/marovid/');
+      const ownedVideo = (parsedVideoUrl.hostname.endsWith('.public.blob.vercel-storage.com') || parsedVideoUrl.hostname.endsWith('.private.blob.vercel-storage.com')) && videoPath.startsWith('/marovid/');
       await del([metadata.url, ...(ownedVideo ? [videoUrl] : [])]);
     }
     return NextResponse.json({ ok: true });
