@@ -3,6 +3,7 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
+type AuthUser = { id: string; username: string; avatar: string | null };
 type Video = { id: string; title: string; creator: string; views: number; likes: number; duration: string; thumb: string; src: string; created: number };
 const fmt = (seconds: number) => `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
 
@@ -11,6 +12,7 @@ export default function WatchPage() {
   const slug = (() => { try { return decodeURIComponent(route.slug || ''); } catch { return route.slug || ''; } })();
   const id = slug.startsWith('id=') ? slug.slice(3) : slug;
   const [video, setVideo] = useState<Video | null>(null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [liked, setLiked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -25,6 +27,7 @@ export default function WatchPage() {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+    fetch('/api/auth/session').then(response => response.ok ? response.json() : { user: null }).then(data => { if (!cancelled) setAuthUser(data.user || null); }).catch(() => { if (!cancelled) setAuthUser(null); });
     fetch(`/api/videos/${encodeURIComponent(id)}`)
       .then(async response => {
         if (!response.ok) throw new Error('動画が見つかりません。');
@@ -33,8 +36,6 @@ export default function WatchPage() {
       .then(item => {
         if (cancelled) return;
         setVideo(item);
-        const likes = JSON.parse(localStorage.getItem('marovid-likes') || '[]') as string[];
-        setLiked(likes.includes(item.id));
         const viewKey = `marovid-viewed:${item.id}`;
         const lastViewed = Number(localStorage.getItem(viewKey) || 0);
         if (Date.now() - lastViewed > 30 * 60 * 1000) {
@@ -57,12 +58,14 @@ export default function WatchPage() {
   }, []);
 
   async function toggleGood() {
+    if (!authUser) { window.location.assign('/api/auth/discord'); return; }
     if (!video || busy) return;
     setBusy(true);
     const next = !liked;
     setLiked(next);
-    const likes = JSON.parse(localStorage.getItem('marovid-likes') || '[]') as string[];
-    localStorage.setItem('marovid-likes', JSON.stringify(next ? [...new Set([...likes, video.id])] : likes.filter(value => value !== video.id)));
+    const likesKey = `marovid-likes:${authUser.id}`;
+    const likes = JSON.parse(localStorage.getItem(likesKey) || '[]') as string[];
+    localStorage.setItem(likesKey, JSON.stringify(next ? [...new Set([...likes, video.id])] : likes.filter(value => value !== video.id)));
     try {
       const response = await fetch(`/api/videos/${encodeURIComponent(video.id)}/engagement`, {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: next ? 'like' : 'unlike' }),
@@ -99,7 +102,7 @@ export default function WatchPage() {
   }
 
   return <main className="watch-page">
-    <header className="topbar watch-topbar"><a className="brand" href="/"><span className="brand-mark">m</span>maro<span>Vid</span></a><a className="back-home" href="/">動画一覧へ</a></header>
+    <header className="topbar watch-topbar"><a className="brand" href="/"><span className="brand-mark">m</span>maro<span>Vid</span></a>{authUser?<span className="auth-name">{authUser.username}</span>:<a className="auth-link" href="/api/auth/discord">Discordでログイン</a>}<a className="back-home" href="/">動画一覧へ</a></header>
     <div className="watch-content">
       {error && !video ? <div className="watch-message">{error}<a href="/">動画一覧へ戻る</a></div> : !video ? <div className="watch-message">動画を読み込み中…</div> : <>
         <div className="watch-stage" ref={stageRef} onDoubleClick={toggleFullscreen}>
@@ -118,7 +121,7 @@ export default function WatchPage() {
         </div>
         <section className="watch-details">
           <h1>{video.title}</h1>
-          <div className="watch-meta"><div className="watch-creator"><span className="creator-avatar">{video.creator.slice(0,1)}</span><b>{video.creator}</b></div><div className="engagement"><span>▶　{Number(video.views).toLocaleString()} 回視聴</span><button className={liked ? 'good-button active' : 'good-button'} onClick={toggleGood} disabled={busy}>{liked ? '♥' : '♡'}　Good <b>{Number(video.likes).toLocaleString()}</b></button></div></div>
+          <div className="watch-meta"><div className="watch-creator"><span className="creator-avatar">{video.creator.slice(0,1)}</span><b>{video.creator}</b></div><div className="engagement"><span>▶　{Number(video.views).toLocaleString()} 回視聴</span><button className={liked ? 'good-button active' : 'good-button'} onClick={toggleGood} disabled={busy}>{authUser ? (liked ? '♥　Good' : '♡　Good') : 'DiscordログインしてGood'} <b>{Number(video.likes).toLocaleString()}</b></button></div></div>
           {error && <p className="watch-inline-error">{error}</p>}
         </section>
       </>}
