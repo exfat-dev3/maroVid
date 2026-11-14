@@ -1,23 +1,38 @@
-import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
+import { issueSignedToken } from '@vercel/blob';
+import { handleUploadPresigned, type HandleUploadPresignedBody } from '@vercel/blob/client';
 
 export const runtime = 'nodejs';
 
+const allowedContentTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+const maximumSizeInBytes = 250 * 1024 * 1024;
+
 export async function POST(request: Request): Promise<Response> {
   try {
-    const body = await request.json() as HandleUploadBody;
-    const jsonResponse = await handleUpload({
+    const body = await request.json() as HandleUploadPresignedBody;
+    const jsonResponse = await handleUploadPresigned({
       body,
       request,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
-        maximumSizeInBytes: 250 * 1024 * 1024,
-        addRandomSuffix: true,
-        tokenPayload: JSON.stringify({ source: 'marovid' }),
-      }),
+      getSignedToken: async pathname => {
+        const token = await issueSignedToken({
+          pathname,
+          operations: ['put'],
+          allowedContentTypes,
+          maximumSizeInBytes,
+        });
+        return {
+          token,
+          urlOptions: {
+            allowedContentTypes,
+            maximumSizeInBytes,
+            addRandomSuffix: true,
+          },
+        };
+      },
     });
     return Response.json(jsonResponse);
   } catch (error) {
-    console.error('Video upload token error', error);
-    return Response.json({ error: '動画アップロードを開始できません。Vercel Blob を接続してください。' }, { status: 400 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Vercel Blob presigned upload error:', message);
+    return Response.json({ error: message }, { status: 400 });
   }
 }
