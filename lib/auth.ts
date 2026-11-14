@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 export type AuthUser = { id: string; username: string; avatar: string | null };
 type Session = { user: AuthUser; expiresAt: number };
@@ -28,7 +28,7 @@ export function createPkceVerifier() {
   return randomBytes(48).toString('base64url');
 }
 export function pkceChallenge(verifier: string) {
-  return createHmac('sha256', '').update(verifier).digest('base64url');
+  return createHash('sha256').update(verifier).digest('base64url');
 }
 export function secureCookie(name: string, value: string, request: Request, maxAge: number, extra = '') {
   const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
@@ -69,5 +69,5 @@ export function getCookie(request: Request, name: string) {
   return cookieValue(request, name);
 }
 export function createOAuthPkceChallenge(verifier: string) {
-  return createHmac('sha256', 'maroVid Discord OAuth PKCE').update(verifier).digest('base64url');
+  return createHash('sha256').update(verifier).digest('base64url');
 }
