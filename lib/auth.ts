@@ -1,6 +1,6 @@
-import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
-export type AuthUser = { id: string; username: string; avatar: string | null };
+export type AuthUser = { id: string; username: string; avatar: string | null; email?: string | null };
 type Session = { user: AuthUser; expiresAt: number };
 const sessionCookie = 'marovid_session';
 const sessionAge = 60 * 60 * 24 * 30;
@@ -9,6 +9,22 @@ function secret() {
   const value = process.env.SESSION_SECRET;
   if (!value || value.length < 32) throw new Error('SESSION_SECRET must be at least 32 characters.');
   return value;
+}
+function encryptionKey() { return createHash('sha256').update(secret()).digest(); }
+export function encryptPrivateValue(value: string) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', encryptionKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  return [iv.toString('base64url'), cipher.getAuthTag().toString('base64url'), encrypted.toString('base64url')].join('.');
+}
+export function decryptPrivateValue(value: string) {
+  try {
+    const [ivText, tagText, encryptedText] = value.split('.');
+    if (!ivText || !tagText || !encryptedText) return null;
+    const decipher = createDecipheriv('aes-256-gcm', encryptionKey(), Buffer.from(ivText, 'base64url'));
+    decipher.setAuthTag(Buffer.from(tagText, 'base64url'));
+    return Buffer.concat([decipher.update(Buffer.from(encryptedText, 'base64url')), decipher.final()]).toString('utf8');
+  } catch { return null; }
 }
 function signature(value: string) {
   return createHmac('sha256', secret()).update(value).digest('base64url');
