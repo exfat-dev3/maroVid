@@ -49,10 +49,12 @@ export async function GET(request: Request) {
     if (!discordUser.id || !discordUser.username) return failure();
     const returnTo = getCookie(request, 'marovid_return_to') === '/studio' ? '/studio' : '/';
     const response = NextResponse.redirect(new URL(returnTo, request.url));
+    const defaultAvatarIndex = Number((BigInt(discordUser.id) >> 22n) % 6n);
+    const avatarExtension = discordUser.avatar?.startsWith('a_') ? 'gif' : 'png';
     response.headers.append('Set-Cookie', makeSessionCookie({
       id: discordUser.id,
       username: discordUser.global_name || discordUser.username,
-      avatar: discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png` : null,
+      avatar: discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.${avatarExtension}` : `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png`,
     }, request));
     response.headers.append('Set-Cookie', clearCookie('marovid_oauth_state', request));
     response.headers.append('Set-Cookie', clearCookie('marovid_pkce', request));
