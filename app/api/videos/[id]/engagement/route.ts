@@ -1,5 +1,6 @@
 import { get, issueSignedToken, list, presignUrl } from '@vercel/blob';
 import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
 
 type VideoRecord = { id: string; title: string; creator: string; views?: number | string; likes?: number | string; duration: string; thumb: string; src: string; created: number };
 const prefix = 'marovid/videos/';
@@ -13,6 +14,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!/^[\w-]{1,128}$/.test(id)) return NextResponse.json({ error: '動画が見つかりません。' }, { status: 404 });
     const { action } = await request.json() as { action?: 'view' | 'like' | 'unlike' };
     if (!['view', 'like', 'unlike'].includes(action || '')) return NextResponse.json({ error: '操作が不正です。' }, { status: 400 });
+    if (action !== 'view' && !getSession(request)) return NextResponse.json({ error: 'Good にはDiscordログインが必要です。' }, { status: 401 });
     const pathname = `${prefix}${id}.json`;
     const { blobs } = await list({ prefix: pathname });
     const metadata = blobs.find(blob => blob.pathname === pathname);
