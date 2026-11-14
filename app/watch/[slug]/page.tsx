@@ -122,7 +122,7 @@ export default function WatchPage() {
         </div>
         <section className="watch-details">
           <h1>{video.title}</h1>
-          <div className="watch-meta"><div className="watch-creator">{video.creatorAvatar ? <DiscordAvatar userId={video.ownerId || video.id} avatar={video.creatorAvatar} username={video.creator} variant="creator" /> : <span className="creator-avatar">{video.creator.slice(0,1)}</span>}<b>{video.creator}</b></div><div className="engagement"><span>▶　{Number(video.views).toLocaleString()} 回視聴</span><button className={liked ? 'good-button active' : 'good-button'} onClick={toggleGood} disabled={busy}>{authUser ? (liked ? '♥　Good' : '♡　Good') : 'DiscordログインしてGood'} <b>{Number(video.likes).toLocaleString()}</b></button></div></div>
+          <div className="watch-meta"><div className="watch-creator">{video.creatorAvatar ? <DiscordAvatar userId={video.id} avatar={video.creatorAvatar} username={video.creator} variant="creator" /> : <span className="creator-avatar">{video.creator.slice(0,1)}</span>}<b>{video.creator}</b></div><div className="engagement"><span>▶　{Number(video.views).toLocaleString()} 回視聴</span><button className={liked ? 'good-button active' : 'good-button'} onClick={toggleGood} disabled={busy}>{authUser ? (liked ? '♥　Good' : '♡　Good') : 'DiscordログインしてGood'} <b>{Number(video.likes).toLocaleString()}</b></button></div></div>
           {error && <p className="watch-inline-error">{error}</p>}
         </section>
       </>}
