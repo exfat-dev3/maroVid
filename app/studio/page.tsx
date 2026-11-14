@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { uploadPresigned } from '@vercel/blob/client';
+import { DiscordAvatar } from '../components/discord-avatar';
 
 type User = { id: string; username: string; avatar: string | null };
-type Video = { id: string; title: string; creator: string; views: number; likes: number; duration: string; thumb: string; src: string; created: number };
+type Video = { id: string; title: string; creator: string; views: number; likes: number; creatorAvatar?: string | null; duration: string; thumb: string; src: string; created: number };
 function createVideoId() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes = new Uint8Array(8);
@@ -70,7 +71,7 @@ export default function StudioPage() {
       const source = await uploadPresigned(`marovid/${crypto.randomUUID()}-${file.name.replace(/[^A-Za-z0-9_.ぁ-んァ-ン一-龯-]/g, '_')}`, file, { access: 'public', handleUploadUrl: '/api/upload', multipart: true });
       const id = createVideoId();
       const thumbnail = await uploadPresigned(`marovid/thumbnails/${id}.jpg`, thumbnailFrame, { access: 'public', contentType: 'image/jpeg', handleUploadUrl: '/api/upload' });
-      const record: Video = { id, title: String(data.get('title') || '').trim(), creator: user.username, views: 0, likes: 0, duration: '--:--', thumb: thumbnail.url, src: source.url, created: Date.now() };
+      const record: Video = { id, title: String(data.get('title') || '').trim(), creator: user.username, creatorAvatar: user.avatar, views: 0, likes: 0, duration: '--:--', thumb: thumbnail.url, src: source.url, created: Date.now() };
       const response = await fetch('/api/videos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(record) });
       if (!response.ok) { const result = await response.json().catch(() => ({})); throw new Error(result.error || '投稿情報を保存できませんでした。'); }
       setVideos(current => [record, ...current]); form.reset(); setNotice('動画を投稿しました。');
@@ -87,7 +88,7 @@ export default function StudioPage() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : '動画を削除できませんでした。'); }
   }
   return <main className="studio-page">
-    <header className="topbar appbar"><a className="brand" href="/"><span className="brand-mark">m</span>maro<span>Vid</span></a><span className="app-title">maroStudio</span><a className="toolbar-link" href="/">ホーム</a>{user && <><span className="auth-name">{user.username}</span><button className="auth-logout" onClick={async () => { await fetch('/api/auth/session', { method: 'DELETE' }); setUser(null); setVideos([]); }}>ログアウト</button></>}</header>
+    <header className="topbar appbar"><a className="brand" href="/"><span className="brand-mark">m</span>maro<span>Vid</span></a><span className="app-title">maroStudio</span><a className="toolbar-link" href="/">ホーム</a>{user && <><span className="discord-profile"><DiscordAvatar userId={user.id} avatar={user.avatar} username={user.username} variant="account" /><span className="auth-name">{user.username}</span></span><button className="auth-logout" onClick={async () => { await fetch('/api/auth/session', { method: 'DELETE' }); setUser(null); setVideos([]); }}>ログアウト</button></>}</header>
     <div className="studio-layout"><aside className="studio-sidebar"><div className="sidebar-title">ライブラリ</div><a className="selected" href="#upload">動画を投稿</a><a href="#my-videos">自分の動画</a></aside>
       <section className="studio-main"><div className="studio-heading"><div><span className="eyebrow">CREATOR STUDIO</span><h1>maroStudio</h1><p>動画の投稿と管理</p></div>{user && <span className="studio-user">ログイン中：{user.username}</span>}</div>
         {error && <div className="studio-alert error">{error}</div>}{notice && <div className="studio-alert success">{notice}</div>}
