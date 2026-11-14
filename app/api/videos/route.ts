@@ -1,5 +1,6 @@
 import { del, get, issueSignedToken, list, presignUrl } from '@vercel/blob';
 import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,6 +34,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const user = getSession(request);
+  if (!user) return NextResponse.json({ error: '動画投稿にはDiscordログインが必要です。' }, { status: 401 });
   try {
     const record = await request.json() as VideoRecord;
     if (!record.id || !/^[\w-]{1,128}$/.test(record.id) || !record.title || !record.src) {
@@ -43,6 +46,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'HTTPS の動画 URL を指定してください。' }, { status: 400 });
     }
 
+    record.creator = user.username;
+    record.views = '0';
+    record.likes = 0;
     const pathname = `${prefix}${record.id}.json`;
     const allowedContentTypes = ['application/json'];
     const maximumSizeInBytes = 1024 * 1024;
